@@ -15,14 +15,50 @@ const defaultFormState = {
     error: "",
   },
 };
-export const Contact = () => {
-  const [formData, setFormData] = useState(defaultFormState);
 
-  const handleSubmit = (e: any) => {
+export const Contact = ({ emailTo = "amyjtierney@gmail.com" }: { emailTo?: string }) => {
+  const [formData, setFormData] = useState(defaultFormState);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Write your submit logic here
-    console.log(formData);
+    setIsSubmitting(true);
+    setSubmitError("");
+    
+    try {
+      // Send the form data to our API route
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name.value,
+          email: formData.email.value,
+          message: formData.message.value,
+          emailTo: emailTo,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send message');
+      }
+      
+      // Reset form after successful submission
+      setFormData(defaultFormState);
+      setSubmitSuccess(true);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setSubmitError(error instanceof Error ? error.message : "There was an error sending your message. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
   return (
     <form className="form" onSubmit={handleSubmit}>
       <div className="flex flex-col md:flex-row justify-between gap-5">
@@ -40,6 +76,7 @@ export const Contact = () => {
               },
             });
           }}
+          required
         />
         <input
           type="email"
@@ -55,6 +92,7 @@ export const Contact = () => {
               },
             });
           }}
+          required
         />
       </div>
       <div>
@@ -72,14 +110,28 @@ export const Contact = () => {
               },
             });
           }}
+          required
         />
       </div>
       <button
-        className="w-full px-2 py-2 mt-4 bg-neutral-100 rounded-md font-bold text-neutral-500"
+        className="w-full px-2 py-2 mt-4 bg-neutral-100 rounded-md font-bold text-neutral-500 hover:bg-neutral-200 transition-colors disabled:opacity-50"
         type="submit"
+        disabled={isSubmitting}
       >
-        Submit{" "}
+        {isSubmitting ? "Sending..." : "Submit"}
       </button>
+      
+      {submitSuccess && (
+        <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-md">
+          Thank you for your message! I'll get back to you soon.
+        </div>
+      )}
+      
+      {submitError && (
+        <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md">
+          {submitError}
+        </div>
+      )}
     </form>
   );
 };
