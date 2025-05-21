@@ -3,7 +3,7 @@ import React, { useState } from "react";
 
 const defaultFormState = {
   name: {
-    value: "",
+    value: "a",
     error: "",
   },
   email: {
